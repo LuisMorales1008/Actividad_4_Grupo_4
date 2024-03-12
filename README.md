@@ -2,7 +2,7 @@
 ## _Seccion C_
 ## Practica No.4
 ## Universidad de San Carlos de Guatemala
-[![N|Solid](https://josecal.files.wordpress.com/2014/07/propuesta-logotipo-usac-version-full-color.jpg)](https://www.usac.edu.gt/)
+[![N|Solid](https://www.usac.edu.gt/img/logo_usac2018.svg)](https://www.usac.edu.gt/)
 ## _Facultad de Ingenieria_
 [![N|Solid](https://portal.ingenieria.usac.edu.gt/images/logo_facultad/fiusac_negro.png)](https://portal.ingenieria.usac.edu.gt/)
 
