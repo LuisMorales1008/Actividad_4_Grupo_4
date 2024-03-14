@@ -14,7 +14,7 @@ app.use(cors());
 app.listen(5000, () => {
     console.log('Nuestro Servidor esta corriendo en el puerto 5000');
     // Llamar a la función para cargar los usuarios cuando se inicie la aplicación
-    cargarUsuarios();
+   
 });
 
 // Conexión a la base de datos
@@ -22,26 +22,11 @@ const connection = mysql.createConnection({
     host: 'localhost',
     port: 3306,
     user: 'root',
-    password: '',
+    password: 'DaaNiieeL1',
     database: 'informe4'
 });
 
-const newUser = {
-    nombre: 'Juan',
-    apellido: 'Pérez',
-    correo: 'juan@example.com',
-    contrasena: 'password',
-    carnet: '2332'
-};
 
-
-connection.query('INSERT INTO usuarios SET ?', newUser, (err, result) => {
-    if (err) {
-        console.error('Error al insertar usuario en la base de datos:', err);
-        return;
-    }
-    console.log('Usuario insertado correctamente');
-});
 
 
 // Ruta para cerrar sesión 
@@ -94,6 +79,8 @@ app.post('/crearEstudiante', (req, res) => {
                     
                     console.log('Estudiante registrado exitosamente');
                     res.status(200).json({ mensaje: 'Estudiante registrado exitosamente' });
+                    // Llamar a la función para cargar los usuarios cuando se inicie la aplicación
+                 
                 }
             );
         });
@@ -121,26 +108,54 @@ function cargarUsuarios() {
 }
 
 
-// Función para iniciar sesión utilizando el array de usuarios
-function iniciarSesion(carnet, contrasena) {
-    let tipo = 0;
+// Ruta para cargar usuarios desde la base de datos
+app.post('/cargarUsuarios', (req, res) => {
+    const query = 'SELECT * FROM usuarios';
 
-    // Buscar el usuario en el array
-    const usuario = usuarios.find(user => user.carnet === carnet && user.contrasena === contrasena);
+    connection.query(query, (error, results) => {
+        if (error) {
+            console.error('Error al cargar usuarios desde la base de datos:', error);
+            res.status(500).json({ mensaje: 'Error interno del servidor' });
+            return;
+        }
 
-    if (usuario) {
-        tipo = 1; // Usuario encontrado
-    }
+        // Enviar los resultados de los usuarios al cliente
+        res.status(200).json(results);
+    });
+});
 
-    return tipo;
+
+// Función para iniciar sesión utilizando la base de datos
+function iniciarSesion(carnet, contrasena, callback) {
+    // Consultar la base de datos para encontrar al usuario con el carnet y contraseña proporcionados
+    const query = 'SELECT * FROM usuarios WHERE carnet = ? AND contrasena = ?';
+    connection.query(query, [carnet, contrasena], (error, results) => {
+        if (error) {
+            console.error('Error al buscar usuario en la base de datos:', error);
+            return callback(error, null);
+        }
+
+        if (results.length > 0) {
+            // Usuario encontrado
+            return callback(null, 1);
+        } else {
+            // Usuario y/o Contraseña incorrectos
+            return callback(null, 0);
+        }
+    });
 }
 
-// Ruta /iniciarSesion para iniciar sesión utilizando el array de usuarios
+// Ruta /iniciarSesion para iniciar sesión utilizando la base de datos
 app.post('/iniciarSesion', function (req, res) {
     const carnet = req.body.carnet;
     const contrasena = req.body.contrasena;
-    try {
-        const val = iniciarSesion(carnet, contrasena);
+
+    // Llamar a la función para iniciar sesión utilizando la base de datos
+    iniciarSesion(carnet, contrasena, (error, val) => {
+        if (error) {
+            console.error('Ocurrió un error al iniciar sesión:', error);
+            return res.status(500).json({ mensaje: 'Error interno del servidor' });
+        }
 
         let mensaje = "";
 
@@ -152,14 +167,10 @@ app.post('/iniciarSesion', function (req, res) {
 
         // Aquí incluye el tipo de usuario en la respuesta
         res.json({ mensaje: mensaje, tipoUsuario: val });
-    } catch (error) {
-        console.error('Ocurrió un error al iniciar sesión:', error);
-        res.status(500).json({ mensaje: 'Error interno del servidor' });
-    }
+    });
 });
 
-
-// Ruta para restablecer contraseña del Estudiante
+/// Ruta para restablecer contraseña del Estudiante
 app.post('/olvidoContrasena', (req, res) => {
     const { carnet, correo, nuevaContrasena } = req.body;
 
@@ -180,7 +191,7 @@ app.post('/olvidoContrasena', (req, res) => {
 
         // Actualizar la contraseña del usuario
         const usuario = resultados[0];
-        const queryUpdate = 'UPDATE usuarios SET contraseña = ? WHERE id = ?';
+        const queryUpdate = 'UPDATE usuarios SET contrasena = ? WHERE id = ?';
         connection.query(queryUpdate, [nuevaContrasena, usuario.id], (errorUpdate, resultadoUpdate) => {
             if (errorUpdate) {
                 console.error('Error al actualizar la contraseña en la base de datos:', errorUpdate);
@@ -190,9 +201,33 @@ app.post('/olvidoContrasena', (req, res) => {
 
             // Contraseña actualizada exitosamente
             res.status(200).json({ mensaje: 'Contraseña actualizada exitosamente' });
+  
         });
     });
 });
+
+// Ruta para validar los datos del estudiante
+app.post('/validarDatos', (req, res) => {
+    const { carnet, correo } = req.body;
+  
+    // Verificar si los datos coinciden con algún estudiante registrado
+    const query = 'SELECT * FROM usuarios WHERE carnet = ? AND correo = ?';
+    connection.query(query, [carnet, correo], (error, resultados) => {
+      if (error) {
+        console.error('Error al verificar los datos en la base de datos:', error);
+        res.status(500).json({ valido: false });
+        return;
+      }
+  
+      if (resultados.length === 0) {
+        // No se encontró ningún usuario con los datos proporcionados
+        res.status(200).json({ valido: false });
+      } else {
+        // Datos válidos, se encontró un usuario con los datos proporcionados
+        res.status(200).json({ valido: true });
+      }
+    });
+  });
 
 // Ruta para modificar un estudiante
 app.put('/modificarEstudiante/:id', (req, res) => {
