@@ -1,202 +1,226 @@
-import express from 'express'
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const app = express();//app  para ver el servidor
+const mysql = require('mysql');
+
+//Envia  parametros por body
+app.use(bodyParser.json());
+app.use(cors());
+
+//Nuestro Servidor esta corriendo en el puerto 3002
+app.listen(5000, ()=>{
+    console.log('Nuestro Servidor esta corriendo en el puerto 3002');
+    });
+// Conexión a la base de datos
+const connection = mysql.createConnection({
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: 'DaaNiieeL1',
+    database: 'informe4'
+});
+
+const newUser = {
+    nombre: 'Juan',
+    apellido: 'Pérez',
+    correo: 'juan@example.com',
+    contrasena: 'password',
+    carnet: '2332'
+};
 
 
-//Variables
-var estudiantes =[
-    { nombre: 'estudiante', apellido: 'username', usuario: 'admin', correo:"prueba@gmail.com",cui:"1234567890" ,fechaNacimiento:"12-04-1999", genero:"Masculino" , contrasena: 'password', numTel:"12345678" }
-];
- ;
-
- //------Funciones-------
- function existeUserEstudiantes(nombreUsuario) {
-    let existe = false;
-    for (let indice = 0; indice < estudiantes.length; indice++) {
-        let estud = estudiantes[indice];
-        if (nombreUsuario === estud.usuario) {
-            existe = true;
-        }
+connection.query('INSERT INTO usuarios SET ?', newUser, (err, result) => {
+    if (err) {
+        console.error('Error al insertar usuario en la base de datos:', err);
+        return;
     }
-    return existe;
-}
+    console.log('Usuario insertado correctamente');
+});
 
-function iniciarSesion(usuario, contrasena) {
-    /**
-     *  Esta funcion busca dentro de los arrays de pacientes  si encuentra una coincidencia de usuario y la contraseña, inciera sesion de lo contrario no. 
-     *  estudiantes  = 1
-     *  no existe   = 0
-     */
+
+// Ruta para cerrar sesión 
+app.post('/cerrarSesion', (req, res) => {
+    connection.end();
+    res.json({ mensaje: 'Sesión cerrada exitosamente' });
+});
+
+// Ruta para crear un estudiante y guardarlo en la base de datos
+app.post('/crearEstudiante', (req, res) => {
+    const { nombre, apellido, contrasena, correo, carnet } = req.body;
+
+    // Verifica si el correo ya esta registrado en la base de datos
+    connection.query('SELECT * FROM usuarios WHERE correo = ?', [correo], (errorCorreo, resultadosCorreo) => {
+        if (errorCorreo) {
+            console.error('Error al verificar el correo en la base de datos:', errorCorreo);
+            res.status(500).json({ mensaje: 'Error interno del servidor' });
+            return;
+        }
+
+        if (resultadosCorreo.length > 0) {
+            console.log('Error: El correo ya está registrado');
+            res.status(400).json({ mensaje: 'El correo ya está registrado' });
+            return;
+        }
+
+        // Verifica si el carnet ya esta registrado en la base de datos
+        connection.query('SELECT * FROM usuarios WHERE carnet = ?', [carnet], (errorCarnet, resultadosCarnet) => {
+            if (errorCarnet) {
+                console.error('Error al verificar el carnet en la base de datos:', errorCarnet);
+                res.status(500).json({ mensaje: 'Error interno del servidor' });
+                return;
+            }
+
+            if (resultadosCarnet.length > 0) {
+                console.log('Error: El carnet ya está registrado');
+                res.status(400).json({ mensaje: 'El carnet ya está registrado' });
+                return;
+            }
+
+            // Si el correo y el carnet son únicos, insertar el estudiante en la base de datos
+            connection.query('INSERT INTO usuarios (nombre, apellido, contrasena, correo, carnet) VALUES (?, ?, ?, ?, ?)', 
+                [nombre, apellido, contrasena, correo, carnet], 
+                (errorInsert, resultadoInsert) => {
+                    if (errorInsert) {
+                        console.error('Error al insertar el estudiante en la base de datos:', errorInsert);
+                        res.status(500).json({ mensaje: 'Error interno del servidor' });
+                        return;
+                    }
+                    
+                    console.log('Estudiante registrado exitosamente');
+                    res.status(200).json({ mensaje: 'Estudiante registrado exitosamente' });
+                }
+            );
+        });
+    });
+});
+
+
+// Modificamos la función iniciarSesion para que devuelva una promesa
+async function iniciarSesion(carnet, contrasena) {
     let tipo = 0;
-    let temp = null;
 
-    for (let indice = 0; indice < estudiantes.length; indice++) {
-        temp = estudiantes[indice];
-        if (usuario === temp.usuario && contrasena === temp.contrasena) {
-            tipo = 1;
-            usuarioActivo = temp;
+    try {
+        const query = 'SELECT * FROM usuarios WHERE carnet = ? AND contrasena = ?';
+        const [usuarios] = await connection.query(query, [carnet, contrasena]);
+
+        if (usuarios.length > 0) {
+            usuarioActivo = usuarios[0];
+            tipo = 1; // Estudiante
         }
+    } catch (error) {
+        console.error('Error al buscar usuario en la base de datos:', error);
+        throw error;
     }
+
     return tipo;
 }
 
-/**
- *  ENDPOINTS PARA EL MANEJO DE PACIENTES
- */
-app.post('/guardarEstudiantesArreglo', function (req, res) {
-    /**
-     *  Este endpoint agrega un usuario al array de pacientes
-     */
-    const usuario = req.body.usuario;
-    if (!existeUserEstudiantes(usuario)) {
-        const nombre = req.body.nombre;
-        const apellido = req.body.apellido;
-        const usuario = req.body.usuario;
-        const fechaNacimiento = req.body.fechaNacimiento;
-        const genero = req.body.genero;
-        const contrasena = req.body.contrasena;
-        const numTel = req.body.numTel;
-        const activo = 1;
-        if (contrasena.length >= 8) {
-            estudiantes.push({ nombre, apellido, usuario, fechaNacimiento, genero, contrasena, numTel , activo});
-            res.json({ mensaje: "Ingresado al arreglo el Estudiante= " + nombre + ",usuario= " + usuario });
+// Modificamos la ruta /iniciarSesion para esperar la respuesta de iniciarSesion
+app.post('/iniciarSesion', async function (req, res) {    
+    const carnet = req.body.carnet;
+    const contrasena = req.body.contrasena;
+
+    try {
+        const val = await iniciarSesion(carnet, contrasena);
+
+        let mensaje = "";
+
+        if (val === 1) {
+            mensaje = "Ingresó un Estudiante";
         } else {
-            res.json({ mensaje: "La contraseña debe tener al menos 8 caracteres, Intente de Nuevo" });
+            mensaje = "Usuario y/o Contraseña son incorrectos, por favor revise e intente de nuevo.";
         }
 
+        // Aquí incluye el tipo de usuario en la respuesta
+        res.json({ mensaje: "----Bienvenido---" + mensaje, tipoUsuario: val });
+    } catch (error) {
+        console.error('Ocurrió un error al iniciar sesión:', error);
+        res.status(500).json({ mensaje: 'Error interno del servidor' });
+    }
+});
+
+
+// Ruta para restablecer contraseña del Estudiante
+app.post('/olvidoContrasena', (req, res) => {
+    const { carnet, correo, nuevaContrasena } = req.body;
+
+    // Verificar si los datos coinciden con algún estudiante registrado
+    const query = 'SELECT * FROM usuarios WHERE carnet = ? AND correo = ?';
+    connection.query(query, [carnet, correo], (error, resultados) => {
+        if (error) {
+            console.error('Error al verificar los datos en la base de datos:', error);
+            res.status(500).json({ mensaje: 'Error interno del servidor' });
+            return;
+        }
+
+        if (resultados.length === 0) {
+            // No se encontró ningún usuario con los datos proporcionados
+            res.status(400).json({ mensaje: 'Los datos proporcionados son incorrectos' });
+            return;
+        }
+
+        // Actualizar la contraseña del usuario
+        const usuario = resultados[0];
+        const queryUpdate = 'UPDATE usuarios SET contraseña = ? WHERE id = ?';
+        connection.query(queryUpdate, [nuevaContrasena, usuario.id], (errorUpdate, resultadoUpdate) => {
+            if (errorUpdate) {
+                console.error('Error al actualizar la contraseña en la base de datos:', errorUpdate);
+                res.status(500).json({ mensaje: 'Error interno del servidor' });
+                return;
+            }
+
+            // Contraseña actualizada exitosamente
+            res.status(200).json({ mensaje: 'Contraseña actualizada exitosamente' });
+        });
+    });
+});
+
+// Ruta para modificar un estudiante
+app.put('/modificarEstudiante/:id', (req, res) => {
+    const id = req.params.id;
+    const { nombre, apellido, contraseña, correo } = req.body;
+
+    // Verificar si el estudiante existe
+    connection.query('SELECT * FROM usuarios WHERE id = ?', [id], (error, resultados) => {
+        if (error) {
+            console.error('Error al buscar estudiante en la base de datos:', error);
+            res.status(500).json({ mensaje: 'Error interno del servidor' });
+            return;
+        }
+
+        if (resultados.length === 0) {
+            // No se encontró ningún estudiante con el ID proporcionado
+            res.status(404).json({ mensaje: 'Estudiante no encontrado' });
+            return;
+        }
+
+        // Actualizar los datos del estudiante (excluyendo el campo del carnet)
+        connection.query('UPDATE usuarios SET nombre = ?, apellido = ?, contraseña = ?, correo = ? WHERE id = ?', 
+            [nombre, apellido, contraseña, correo, id], 
+            (errorUpdate, resultadoUpdate) => {
+                if (errorUpdate) {
+                    console.error('Error al actualizar estudiante en la base de datos:', errorUpdate);
+                    res.status(500).json({ mensaje: 'Error interno del servidor' });
+                    return;
+                }
+                
+                // Estudiante actualizado exitosamente
+                res.status(200).json({ mensaje: 'Estudiante actualizado exitosamente' });
+            }
+        );
+    });
+});
+
+// Ruta para el menú principal
+app.get('/menuPrincipal', (req, res) => {
+    if (usuarioActivo) {
+        // Renderizar la página del menú principal con los datos del estudiante activo
+        res.render('menuPrincipal', { 
+            mensaje: `Bienvenido, ${usuarioActivo.nombre} ${usuarioActivo.apellido}` 
+        });
     } else {
-        res.json({ mensaje: "El usuario: " + usuario + " ya existe" });
+        // Si no hay ningún estudiante activo, redirigir al inicio de sesión
+        res.redirect('/iniciarSesion');
     }
-});
-
-app.post('/mostrarEstudiantes', function (req, res) {
-    const usuario = req.body.usuario;
-    let estud = { usuario: null };
-    let temp = null;
-
-    for (let indice = 0; indice < estudiantes.length; indice++) {
-        temp = estudiantes[indice];
-        if (temp.usuario === usuario) {
-            estud = temp;
-        }
-    }
-    res.json(estud);
-});
-
-
-app.get('/recorrerArregloEstudiantes', function (req, res) {     // se ve en la consola del servidor
-    console.log("Info almacenada en el  arreglo: ");
-    let estud;
-    for (let indice = 0; indice < estudiantes.length; indice++) {
-        estud = estudiantes[indice];
-        console.log("---> " + indice + " Nombre: " + estud.nombre + ", Apellido: " + estud.apellido);
-    }
-    res.json(estudiantes);
-
-});
-
-app.post('/modificarEstudiantes', function (req, res) {
-    let usu = req.body.usuario;
-    for (let indice = 0; indice < estudiantes.length; indice++) {
-        let estud = estudiantes[indice];
-        if (usu == estud.usuario) {
-            estud.nombre = req.body.nombre;
-            estud.apellido = req.body.apellido;
-            estud.fechaNacimiento = req.body.fechaNacimiento;
-            estud.contrasena = req.body.contrasena;
-            estud.numTel = req.body.numTel;
-        }
-    }
-    res.json({ mensaje: "Usuario= " + usu + " modificado Exitosamente" });
-});
-
-/**
- *  ENDPOINTS PARA MANEJO DE LOS SITIOS
- */
-app.get('/cerrarSesion', function (req, res) {     // se ve en la consola del servidor    
-    usuarioActivo = null;
-    res.json({ mensaje: "se cerro sesion exitosamente" });
-});
-
-app.post('/iniciarSesion', function (req, res) {    
-    const usuario = req.body.usuario;
-    const contrasena = req.body.contrasena;
-    let val = iniciarSesion(usuario, contrasena);
-
-    let mensaje = "";
-
-    if (val === 1) {
-        mensaje = "Ingresó un Estudiante";
-    } else {
-        mensaje = "Usuario y/o Contraseña son incorrectos, por favor revise e intente de nuevo.";
-    }
-
-    // Aquí incluye el tipo de usuario en la respuesta
-    res.json({ mensaje: "----Bienvenido---" + mensaje, tipoUsuario: val });
-});
-
-
-//Para poner nombre y apellido en la Url
-app.get('/conParametros/:nombre/:apellido', function(req,res){
-    const nombre = req.params.nombre;
-    const apellido = req.params.apellido;
-    res.send("Bienvenido: "+nombre+" "+apellido);
-});
-
-//Para poner nombre y apellido pero oculto
-app.get('/conBody', function(req,res){
-    const nombre = req.body.nombre;
-    const apellido= req.body.apellido;
-
-    res.send("Bienvenido: "+nombre+" "+apellido);
-});
-
-
-//Es un Post donde Guardamos la informacion
-app.post('/guardarArreglo', function(req,res){
-    const nombre = req.body.nombre;
-    const apellido= req.body.apellido;
-    const usuario = req.body.usuario;
-    const fechaNacimiento = req.body.fechaNacimiento;
-    const genero = req.body.genero;
-    const contrasena = req.body.contrasena;
-    const numTel = req.body.numTel;
-    
-    estudiantes.push({nombre:nombre, apellido:apellido, usuario:usuario, fechaNacimiento:fechaNacimiento, genero:genero, contrasena:contrasena, numTel:numTel});
-
-    res.send("Ingresado al Arreglo: "+nombre+" "+usuario);
-});
-
-//Buscamos si Existe el Paciente si no, se Envia una mensaje.
-app.get('/buscarIndice', function(req,res){
-    const id = req.body.id;
-    
-    if(id>=0 && id<estudiantes.length){
-        var estudiantesTemp = estudiantes[id];
-        res.status(200).json(estudiantesTemp);
-    }else{
-        res.send("El Usaurio no existe.");
-   }
-});
-
-app.get('/recorrerArreglo', function(req,res){
-    let estudiantesTemp;
-    console.log("------Inicio del Arreglo----")
-    
-    for(let id=0; id<pacientes.length; id++){
-        estudiantesTemp = estudiantes[id];  
-        console.log("-->"+estudiantesTemp.usuario+" "+estudiantesTemp.nombre+" "+estudiantesTemp.apellido+" "+estudiantesTemp.genero+" "+estudiantesTemp.fechaNacimiento+" "+estudiantesTemp.numTel);
-   }
-   console.log("------Fin del Arreglo----")
-   res.send("Recorrido Exitosamente");
-});
-
-app.listen(5000, ()=>{
-    console.log('El servidor ha iniciado')
-});
-
-app.get('/', (req, res)=>{
-    res.end('<h1>Hello World</h1>');
 });
