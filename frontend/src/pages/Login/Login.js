@@ -12,7 +12,7 @@ const LoginMenu = () => {
             <h1><label className={styles.label}>Inicio de Sesión Ingeniera USAC</label></h1>
             <input type="text" placeholder="CUI/Registro Academico/Registro Personal" className={styles.input}/><br/>
             <input type="password" placeholder="Contraseña" className={styles.input}/><br/>
-            <button type="submit" className={styles.boton}>Iniciar Sesión</button><br/>
+            <button type="submit" className={styles.boton} onClick={() => navigate('/layout/inicio')}>Iniciar Sesión</button><br/>
             <button type="submit" className={styles.boton} onClick={() => navigate('/registrar')}>Registrarse</button><br/>
             <button type="submit" className={styles.boton} onClick={() => navigate('/olvidar')}>Olvide mi Contraseña</button>
           </form>

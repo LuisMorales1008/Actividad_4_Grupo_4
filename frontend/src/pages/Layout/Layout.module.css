@@ -1,0 +1,23 @@
+.navbar {
+    width: 100%;
+    background-color: rgb(102, 0, 71);
+    color: chocolate;
+    margin-bottom: 20px;
+}
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+li {
+    display: inline-block;
+}
+
+a {
+    text-decoration: none;
+    color: whitesmoke;
+    display: block;
+    padding: 14px 12px 14px;
+}

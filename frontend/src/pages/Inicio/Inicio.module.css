@@ -1,0 +1,31 @@
+.form{
+    width: 600px;
+    padding: 20px;
+    background-color:rgb(255, 209, 154);
+    margin: auto;
+    margin-top: 10px;
+    border-radius: 5px;
+    font-family: 'Comic Sans MS', cursive;
+  }
+  
+  .label{
+    display: block;
+    font-family: 'Comic Sans MS', cursive;
+  }
+  
+  .input {
+    width: 260px;
+    height: 20px;
+    text-align: center;
+  }
+  
+  .boton{
+    width: auto;
+    height: 40px;
+    border-style: none;
+    background-color:rgb(202, 202, 202);
+    color:rgb(100, 23, 23);
+    border-radius: 10px;
+    margin-top: 5px;
+    font-family: 'Comic Sans MS', cursive;
+  }
