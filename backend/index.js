@@ -4,20 +4,25 @@ const cors = require('cors');
 const app = express();//app  para ver el servidor
 const mysql = require('mysql');
 
+
 //Envia  parametros por body
 app.use(bodyParser.json());
 app.use(cors());
 
-//Nuestro Servidor esta corriendo en el puerto 3002
-app.listen(5000, ()=>{
-    console.log('Nuestro Servidor esta corriendo en el puerto 3002');
-    });
+
+// Iniciar el servidor
+app.listen(5000, () => {
+    console.log('Nuestro Servidor esta corriendo en el puerto 5000');
+    // Llamar a la función para cargar los usuarios cuando se inicie la aplicación
+    cargarUsuarios();
+});
+
 // Conexión a la base de datos
 const connection = mysql.createConnection({
     host: 'localhost',
     port: 3306,
     user: 'root',
-    password: 'DaaNiieeL1',
+    password: '',
     database: 'informe4'
 });
 
@@ -96,44 +101,57 @@ app.post('/crearEstudiante', (req, res) => {
 });
 
 
-// Modificamos la función iniciarSesion para que devuelva una promesa
-async function iniciarSesion(carnet, contrasena) {
+// Array para almacenar los datos de los usuarios
+let usuarios = [];
+
+// Función para cargar los datos de la tabla de usuarios en el array
+function cargarUsuarios() {
+    const query = 'SELECT * FROM usuarios';
+
+    connection.query(query, (error, results) => {
+        if (error) {
+            console.error('Error al cargar usuarios desde la base de datos:', error);
+            return;
+        }
+
+        // Almacenar los resultados en el array de usuarios
+        usuarios = results;
+        console.log('Usuarios cargados desde la base de datos:', usuarios);
+    });
+}
+
+
+// Función para iniciar sesión utilizando el array de usuarios
+function iniciarSesion(carnet, contrasena) {
     let tipo = 0;
 
-    try {
-        const query = 'SELECT * FROM usuarios WHERE carnet = ? AND contrasena = ?';
-        const [usuarios] = await connection.query(query, [carnet, contrasena]);
+    // Buscar el usuario en el array
+    const usuario = usuarios.find(user => user.carnet === carnet && user.contrasena === contrasena);
 
-        if (usuarios.length > 0) {
-            usuarioActivo = usuarios[0];
-            tipo = 1; // Estudiante
-        }
-    } catch (error) {
-        console.error('Error al buscar usuario en la base de datos:', error);
-        throw error;
+    if (usuario) {
+        tipo = 1; // Usuario encontrado
     }
 
     return tipo;
 }
 
-// Modificamos la ruta /iniciarSesion para esperar la respuesta de iniciarSesion
-app.post('/iniciarSesion', async function (req, res) {    
+// Ruta /iniciarSesion para iniciar sesión utilizando el array de usuarios
+app.post('/iniciarSesion', function (req, res) {
     const carnet = req.body.carnet;
     const contrasena = req.body.contrasena;
-
     try {
-        const val = await iniciarSesion(carnet, contrasena);
+        const val = iniciarSesion(carnet, contrasena);
 
         let mensaje = "";
 
         if (val === 1) {
-            mensaje = "Ingresó un Estudiante";
+            mensaje = "Ingresó un Usuario";
         } else {
             mensaje = "Usuario y/o Contraseña son incorrectos, por favor revise e intente de nuevo.";
         }
 
         // Aquí incluye el tipo de usuario en la respuesta
-        res.json({ mensaje: "----Bienvenido---" + mensaje, tipoUsuario: val });
+        res.json({ mensaje: mensaje, tipoUsuario: val });
     } catch (error) {
         console.error('Ocurrió un error al iniciar sesión:', error);
         res.status(500).json({ mensaje: 'Error interno del servidor' });
