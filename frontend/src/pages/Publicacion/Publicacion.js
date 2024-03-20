@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 
 const Publicacion = () => {
   const [type, setType] = useState('course');
-  const [courseOrProfessor, setCourseOrProfessor] = useState('');
-  const [message, setMessage] = useState('');
+  const [cursoOprofesor, setCourseOrProfessor] = useState('');
+  const [mensaje, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -15,15 +15,15 @@ const Publicacion = () => {
 
     try {
       const userData = JSON.parse(localStorage.getItem('userData'));
-      const { userId, nombres, apellidos } = userData;
+      const { carnet, nombres, apellidos } = userData;
 
       const newPost = {
-        userId,
+        carnet,
         nombres,
         apellidos,
         type,
-        courseOrProfessor,
-        message,
+        cursoOprofesor,
+        mensaje,
         createdAt: new Date(),
       };
 
@@ -43,15 +43,15 @@ const Publicacion = () => {
       <center>
       <h1 className={styles.label}>Crear Publicación</h1>
       <form className={styles.form} onSubmit={handleSubmit}>
-        <div>
+        <div className={styles.datosPerfil}>
           <label>
             <input type="radio" name="type" value="curso" checked={type === 'course'} onChange={() => setType('course')}/>Curso </label>
           <label>
             <input type="radio" name="type" value="professor" checked={type === 'professor'} onChange={() => setType('professor')} />Profesor
           </label>
         </div>
-        <input type="text" placeholder={type === 'course' ? 'Nombre del curso' : 'Nombre del profesor'} value={courseOrProfessor} onChange={(e) => setCourseOrProfessor(e.target.value)} /><p/>
-        <textarea placeholder="Escribe tu publicación aquí" value={message} onChange={(e) => setMessage(e.target.value)} /><br/>
+        <input type="text" placeholder={type === 'course' ? 'Nombre del curso' : 'Nombre del profesor'} value={cursoOprofesor} onChange={(e) => setCourseOrProfessor(e.target.value)} /><p/>
+        <textarea placeholder="Escribe tu publicación aquí" value={mensaje} onChange={(e) => setMessage(e.target.value)} /><br/>
         <button type="submit" disabled={loading}>
           {loading ? 'Creando publicación...' : 'Crear Publicación'}
         </button>
