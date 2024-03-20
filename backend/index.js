@@ -1,19 +1,15 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const app = express();//app  para ver el servidor
+const app = express();
 const mysql = require('mysql');
-
 
 //Envia  parametros por body
 app.use(bodyParser.json());
 app.use(cors());
-
-
 // Iniciar el servidor
 app.listen(5000, () => {
     console.log('Nuestro Servidor esta corriendo en el puerto 5000');
-    // Llamar a la función para cargar los usuarios cuando se inicie la aplicación
    
 });
 
@@ -25,9 +21,6 @@ const connection = mysql.createConnection({
     password: 'DaaNiieeL1',
     database: 'informe4'
 });
-
-
-
 
 // Ruta para cerrar sesión 
 app.post('/cerrarSesion', (req, res) => {
@@ -87,43 +80,8 @@ app.post('/crearEstudiante', (req, res) => {
     });
 });
 
-
-// Array para almacenar los datos de los usuarios
-let usuarios = [];
-
-// Función para cargar los datos de la tabla de usuarios en el array
-function cargarUsuarios() {
-    const query = 'SELECT * FROM usuarios';
-
-    connection.query(query, (error, results) => {
-        if (error) {
-            console.error('Error al cargar usuarios desde la base de datos:', error);
-            return;
-        }
-
-        // Almacenar los resultados en el array de usuarios
-        usuarios = results;
-        console.log('Usuarios cargados desde la base de datos:', usuarios);
-    });
-}
-
-
-// Ruta para cargar usuarios desde la base de datos
-app.post('/cargarUsuarios', (req, res) => {
-    const query = 'SELECT * FROM usuarios';
-
-    connection.query(query, (error, results) => {
-        if (error) {
-            console.error('Error al cargar usuarios desde la base de datos:', error);
-            res.status(500).json({ mensaje: 'Error interno del servidor' });
-            return;
-        }
-
-        // Enviar los resultados de los usuarios al cliente
-        res.status(200).json(results);
-    });
-});
-
+// Declaración de un objeto global para almacenar los datos del usuario
+let datosUsuario = {};
 
 // Función para iniciar sesión utilizando la base de datos
 function iniciarSesion(carnet, contrasena, callback) {
@@ -136,11 +94,12 @@ function iniciarSesion(carnet, contrasena, callback) {
         }
 
         if (results.length > 0) {
-            // Usuario encontrado
-            return callback(null, 1);
+            // Usuario encontrado, almacenar los datos del usuario en el array global
+            datosUsuario = results[0];
+            return callback(null, results[0]);
         } else {
             // Usuario y/o Contraseña incorrectos
-            return callback(null, 0);
+            return callback(null, null);
         }
     });
 }
@@ -151,24 +110,33 @@ app.post('/iniciarSesion', function (req, res) {
     const contrasena = req.body.contrasena;
 
     // Llamar a la función para iniciar sesión utilizando la base de datos
-    iniciarSesion(carnet, contrasena, (error, val) => {
+    iniciarSesion(carnet, contrasena, (error, usuario) => {
         if (error) {
             console.error('Ocurrió un error al iniciar sesión:', error);
             return res.status(500).json({ mensaje: 'Error interno del servidor' });
         }
 
-        let mensaje = "";
-
-        if (val === 1) {
-            mensaje = "Ingresó un Usuario";
+        if (usuario) {
+            // Inicio de sesión exitoso, enviar mensaje de éxito
+            res.json({ mensaje: 'Ingresó un Usuario' });
         } else {
-            mensaje = "Usuario y/o Contraseña son incorrectos, por favor revise e intente de nuevo.";
+            // Usuario y/o Contraseña incorrectos
+            res.status(401).json({ mensaje: 'Usuario y/o Contraseña son incorrectos' });
         }
-
-        // Aquí incluye el tipo de usuario en la respuesta
-        res.json({ mensaje: mensaje, tipoUsuario: val });
     });
 });
+
+// Ruta para obtener los datos del usuario después de iniciar sesión
+app.get('/datosUsuario', function (req, res) {
+    // Verificar si hay datos de usuario almacenados en el array
+    if (Object.keys(datosUsuario).length === 0) {
+        return res.status(404).json({ mensaje: 'No se encontraron datos de usuario' });
+    }
+    
+    // Enviar los datos del usuario como respuesta
+    res.json({ datosUsuario: datosUsuario });
+}); 
+
 
 /// Ruta para restablecer contraseña del Estudiante
 app.post('/olvidoContrasena', (req, res) => {
@@ -198,13 +166,15 @@ app.post('/olvidoContrasena', (req, res) => {
                 res.status(500).json({ mensaje: 'Error interno del servidor' });
                 return;
             }
-
+            // Actualizar el array global con los nuevos datos del usuario
+            datosUsuario.push({ carnet, nombre, apellido, correo, contrasena });
             // Contraseña actualizada exitosamente
             res.status(200).json({ mensaje: 'Contraseña actualizada exitosamente' });
   
         });
     });
 });
+
 
 // Ruta para validar los datos del estudiante
 app.post('/validarDatos', (req, res) => {
@@ -229,51 +199,182 @@ app.post('/validarDatos', (req, res) => {
     });
   });
 
-// Ruta para modificar un estudiante
-app.put('/modificarEstudiante/:id', (req, res) => {
-    const id = req.params.id;
-    const { nombre, apellido, contraseña, correo } = req.body;
 
-    // Verificar si el estudiante existe
-    connection.query('SELECT * FROM usuarios WHERE id = ?', [id], (error, resultados) => {
+  // Ruta para validar los datos del estudiante en Perfil 
+app.post('/validarDatosPerfil', (req, res) => {
+    const { carnet, contrasena } = req.body;
+  
+    // Verificar si los datos coinciden con algún estudiante registrado
+    const query = 'SELECT * FROM usuarios WHERE carnet = ? AND contrasena = ?';
+    connection.query(query, [carnet, contrasena], (error, resultados) => {
+      if (error) {
+        console.error('Error al verificar los datos en la base de datos:', error);
+        res.status(500).json({ valido: false });
+        return;
+      }
+  
+      if (resultados.length === 0) {
+        // No se encontró ningún usuario con los datos proporcionados
+        res.status(200).json({ valido: false });
+      } else {
+        // Datos válidos, se encontró un usuario con los datos proporcionados
+        res.status(200).json({ valido: true });
+      }
+    });
+  });
+
+  // Ruta para buscar un usuario por su carnet
+app.get('/buscarUsuario', (req, res) => {
+    const { carnet } = req.query;
+  
+    // Verificar si se proporcionó el carnet en la consulta
+    if (!carnet) {
+      return res.status(400).json({ message: 'Se requiere proporcionar el carnet del usuario.' });
+    }
+  
+    // Realizar la búsqueda del usuario en la base de datos
+    const query = 'SELECT * FROM usuarios WHERE carnet = ?';
+    connection.query(query, [carnet], (error, resultados) => {
+      if (error) {
+        console.error('Error al buscar usuario en la base de datos:', error);
+        return res.status(500).json({ message: 'Ocurrió un error al buscar el usuario. Por favor, inténtalo de nuevo.' });
+      }
+  
+      if (resultados.length === 0) {
+        // No se encontró ningún usuario con el carnet proporcionado
+        return res.status(404).json({ message: 'No se encontró ningún usuario con el carnet proporcionado.' });
+      }
+  
+      // Se encontró un usuario con el carnet proporcionado, enviar los datos del usuario como respuesta
+      res.status(200).json({ datosUsuario: resultados[0] });
+    });
+  });
+
+
+ // Ruta para guardar los nuevos datos del perfil del estudiante
+app.post('/nuevosDatos', (req, res) => {
+    const { carnet, nombre, apellido, correo, contrasena } = req.body;
+
+    // Verificar si el estudiante existe en la base de datos
+    const query = 'SELECT * FROM usuarios WHERE carnet = ?';
+    connection.query(query, [carnet], (error, resultados) => {
         if (error) {
-            console.error('Error al buscar estudiante en la base de datos:', error);
+            console.error('Error al verificar los datos en la base de datos:', error);
             res.status(500).json({ mensaje: 'Error interno del servidor' });
             return;
         }
 
         if (resultados.length === 0) {
-            // No se encontró ningún estudiante con el ID proporcionado
-            res.status(404).json({ mensaje: 'Estudiante no encontrado' });
+            // No se encontró ningún estudiante con el carnet proporcionado
+            res.status(400).json({ mensaje: 'No se encontró ningún estudiante con el carnet proporcionado' });
             return;
         }
 
-        // Actualizar los datos del estudiante (excluyendo el campo del carnet)
-        connection.query('UPDATE usuarios SET nombre = ?, apellido = ?, contraseña = ?, correo = ? WHERE id = ?', 
-            [nombre, apellido, contraseña, correo, id], 
-            (errorUpdate, resultadoUpdate) => {
-                if (errorUpdate) {
-                    console.error('Error al actualizar estudiante en la base de datos:', errorUpdate);
-                    res.status(500).json({ mensaje: 'Error interno del servidor' });
-                    return;
-                }
-                
-                // Estudiante actualizado exitosamente
-                res.status(200).json({ mensaje: 'Estudiante actualizado exitosamente' });
+        // Actualizar los datos del estudiante
+        const estudiante = resultados[0];
+        const queryUpdate = 'UPDATE usuarios SET nombre = ?, apellido = ?, correo = ?, contrasena = ? WHERE id = ?';
+        connection.query(queryUpdate, [nombre, apellido, correo, contrasena, estudiante.id], (errorUpdate, resultadoUpdate) => {
+            if (errorUpdate) {
+                console.error('Error al actualizar los datos en la base de datos:', errorUpdate);
+                res.status(500).json({ mensaje: 'Error interno del servidor' });
+                return;
             }
-        );
+
+            // Actualizar el objeto global datosUsuario con los nuevos datos
+            datosUsuario = { carnet, nombre, apellido, correo, contrasena };
+
+            // Datos actualizados exitosamente
+            res.status(200).json({ mensaje: 'Datos actualizados exitosamente' });
+        });
     });
 });
 
-// Ruta para el menú principal
-app.get('/menuPrincipal', (req, res) => {
-    if (usuarioActivo) {
-        // Renderizar la página del menú principal con los datos del estudiante activo
-        res.render('menuPrincipal', { 
-            mensaje: `Bienvenido, ${usuarioActivo.nombre} ${usuarioActivo.apellido}` 
-        });
-    } else {
-        // Si no hay ningún estudiante activo, redirigir al inicio de sesión
-        res.redirect('/iniciarSesion');
+// Endpoint para obtener el carné del estudiante
+app.get('/carnet', (req, res) => {
+    res.status(200).json({ carnet: datosUsuario.carnet });
+});
+
+// Ruta para obtener todos los cursos que no han sido aprobados por el estudiante
+app.get('/cursos', (req, res) => {
+    const { carnet } = datosUsuario;
+    
+    // Realizar la consulta a la base de datos para obtener los cursos que no han sido aprobados por el estudiante
+    const query = `
+        SELECT cursos.* 
+        FROM cursos 
+        LEFT JOIN cursosaprobados ON cursos.id = cursosaprobados.id_curso AND cursosaprobados.carnet = ?
+        WHERE cursosaprobados.id_curso IS NULL
+    `;
+    
+    connection.query(query, [carnet], (error, cursos) => {
+        if (error) {
+            console.error('Error al obtener los cursos:', error);
+            res.status(500).json({ message: 'Ocurrió un error al obtener los cursos.' });
+        } else {
+            res.status(200).json({ cursos });
+        }
+    });
+});
+
+// Ruta para obtener los cursos aprobados por un estudiante específico
+app.get('/cursos-aprobados', (req, res) => {
+    const { carnet } = datosUsuario;
+    
+    // Realizar la consulta a la base de datos para obtener los cursos aprobados por el estudiante
+    const query = 'SELECT cursos.* FROM Cursos JOIN cursosaprobados ON cursos.id = cursosaprobados.id_curso WHERE cursosaprobados.carnet = ?';
+    connection.query(query, [carnet], (error, cursosAprobados) => {
+        if (error) {
+            console.error('Error al obtener los cursos aprobados:', error);
+            res.status(500).json({ message: 'Ocurrió un error al obtener los cursos aprobados.' });
+        } else {
+            res.status(200).json({ cursosAprobados });
+        }
+    });
+});
+
+// Ruta para agregar un curso asignado
+app.post('/agregar-curso', async (req, res) => {
+    const { carnet, idCurso } = req.body;
+
+    try {
+        // Verificar si ya existe un curso asignado para el estudiante y el curso específico
+        const existeCursoAsignado = await connection.query(
+            'SELECT * FROM cursosaprobados WHERE carnet = ? AND id_curso = ?',
+            [carnet, idCurso]
+        );
+
+        // Si ya existe un curso asignado, devuelve un mensaje de error
+        if (existeCursoAsignado.length > 0) {
+            return res.status(400).json({ success: false, message: 'El curso ya está asignado para este estudiante.' });
+        }
+
+        // Si no existe un curso asignado, procede a insertar el nuevo curso asignado
+        await connection.query(
+            'INSERT INTO cursosaprobados (carnet, id_curso) VALUES (?, ?)',
+            [carnet, idCurso]
+        );
+
+        // Devuelve un mensaje de éxito
+        return res.status(200).json({ success: true, message: 'Curso asignado exitosamente.' });
+    } catch (error) {
+        console.error('Error al agregar el curso asignado:', error);
+        return res.status(500).json({ success: false, message: 'Ocurrió un error al agregar el curso asignado.' });
     }
 });
+
+// Ruta para obtener los cursos aprobados por un estudiante específico
+app.get('/mostrar-cursos-aprobados/:carnet', (req, res) => {
+    const { carnet } = req.params;
+    
+    // Realizar la consulta a la base de datos para obtener los cursos aprobados por el estudiante
+    const query = 'SELECT cursos.* FROM Cursos JOIN cursosaprobados ON cursos.id = cursosaprobados.id_curso WHERE cursosaprobados.carnet = ?';
+    connection.query(query, [carnet], (error, cursosAprobados) => {
+        if (error) {
+            console.error('Error al obtener los cursos aprobados:', error);
+            res.status(500).json({ message: 'Ocurrió un error al obtener los cursos aprobados.' });
+        } else {
+            res.status(200).json({ cursosAprobados });
+        }
+    });
+});
+

@@ -31,14 +31,6 @@ const Olvidar = () => {
     }
   };
 
-  const cargarUsuarios = async () => {
-    try {
-      await axios.post('http://localhost:5000/cargarUsuarios');
-      console.log('Usuarios cargados correctamente');
-    } catch (error) {
-      console.error('Error al cargar usuarios:', error);
-    }
-  };
   const restablecerContrasena = async () => {
     // Verificar si las contraseñas coinciden
     if (nuevaContrasena !== confirmarContrasena) {

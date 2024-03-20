@@ -1,0 +1,148 @@
+.search-container {
+  width: 90%;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: #d9a7c7; /* fallback for old browsers */
+  background: -webkit-linear-gradient(to right, #fffcdc, #d9a7c7); /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to right, #fffcdc, #d9a7c7); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+
+.search-title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 24px; 
+  color: #333; 
+  font-weight: bold; 
+  text-transform: uppercase; 
+  letter-spacing: 2px; 
+  animation: fadeInUp 1s ease; 
+  transition: font-size 0.3s ease; 
+}
+
+.search-title:hover {
+  font-size: 25px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center; 
+  margin-bottom: 20px;
+}
+
+.search-input {
+  padding: 10px 200px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-right: 10px;
+  text-align: center; 
+  font-size: 16px; 
+  font-weight: bold; 
+}
+
+.search-button {
+  background-color: #007bff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 15px;
+  cursor: pointer;
+  color: #fff;
+}
+
+.search-icon {
+  font-size: 20px;
+  color: #fff;
+}
+.search-button-custom {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.search-button-custom:hover {
+  background-color: #0056b3;
+}
+
+.search-icon-custom {
+  font-size: 18px;
+}
+
+.error-message-custom {
+  font-size: 20px; 
+  color: black; 
+  margin-bottom: 20px; 
+  padding: 10px; 
+  border-radius: 4px;
+  font-family: 'Comic Sans MS', cursive; 
+}
+.user-profile-custom {
+  margin-bottom: 20px;
+}
+
+.toggle-button-custom {
+  background: #d9a7c7; /* fallback for old browsers */
+  background: -webkit-linear-gradient(to left, #d9a7c7, #fffcdc); /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to left, #d9a7c7, #fffcdc); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  border: 1px solid black;
+  color: black;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  text-transform: uppercase;
+  transition: transform 0.2s;
+  font-size: 14px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.toggle-button-custom:hover {
+  color: white; 
+  background: #1e130c;  /* fallback for old browsers */
+  background: -webkit-linear-gradient(to right, #9a8478, #1e130c);  /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to right, #9a8478, #1e130c); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  transform: scale(1.05); 
+}
+
+.no-courses-custom {
+  font-size: 20px; 
+  color: black; 
+  margin-bottom: 20px; 
+  padding: 10px;
+  border-radius: 4px;
+  font-family: 'Comic Sans MS', cursive; 
+}
+
+.courses-table {
+  width: 70%;
+  border-collapse: collapse;
+  background-color: rgb(240, 240, 240);
+  border: 2px solid black;
+  transition: background-color 0.3s ease;
+  margin-top: 20px; 
+  margin-left: auto; 
+  margin-right: auto; 
+}
+
+.courses-table th,
+.courses-table td {
+  padding: 12px;
+  border: 2px solid #000000;
+  text-align: left;
+}

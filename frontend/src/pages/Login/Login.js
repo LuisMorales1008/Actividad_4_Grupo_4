@@ -9,35 +9,32 @@ export const LoginMenu = () => {
   const navigate = useNavigate();
 
   const iniciarSesion = async () => {
-    if (!carnet || !contrasena) {
-      alert('¡Campos incompletos! Por favor, complete todos los campos.');
-      return;
+  if (!carnet || !contrasena) {
+    alert('¡Campos incompletos! Por favor, complete todos los campos.');
+    return;
+  }
+
+  const url = 'http://localhost:5000/iniciarSesion';
+
+  try {
+    const response = await axios.post(url, {
+      carnet,
+      contrasena
+    });
+
+    const { mensaje, usuario } = response.data;
+
+    if (mensaje === 'Ingresó un Usuario') {
+      navigate('/layout/inicio');
+      alert('¡Bienvenido Estudiante!');
+    } else {
+      alert('Error: ' + mensaje);
     }
-
-    const url = 'http://localhost:5000/iniciarSesion';
-
-    try {
-      const response = await axios.post(url, {
-        carnet,
-        contrasena
-      });
-
-      const tipoUsuario = response.data.tipoUsuario;
-
-      switch (tipoUsuario) {
-        case 1:
-          navigate('/layout/inicio');
-          alert('¡Bienvenido Estudiante!');
-          break;
-        default:
-          alert('Error: Tipo de Usuario no reconocido o contraseña incorrecta.');
-          break;
-      }
-    } catch (error) {
-      console.error('Ocurrió un error:', error);
-      alert('Ocurrió un error al iniciar sesión. Por favor, inténtalo de nuevo.');
-    }
-  };
+  } catch (error) {
+    console.error('Ocurrió un error:', error);
+    alert('Ocurrió un error al iniciar sesión. Por favor, inténtalo de nuevo.');
+  }
+};
 
   return (
     <div>

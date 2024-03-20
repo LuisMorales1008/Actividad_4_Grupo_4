@@ -7,6 +7,7 @@ import Layout from './pages/Layout/Layout';
 import Inicio from './pages/Inicio/Inicio';
 import Publicacion from './pages/Publicacion/Publicacion';
 import Perfil from './pages/Perfil/Perfil';
+import Buscar from './pages/Buscar/Buscar';
 import Cursos from './pages/Cursos/Cursos';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
           <Route path='inicio' element={<Inicio />} />
           <Route path="publicacion" element={<Publicacion />} />
           <Route path='perfil' element={<Perfil />} />
+          <Route path='buscar' element={<Buscar />} />
           <Route path='cursos' element={<Cursos />} >
         </Route>
       </Route>
