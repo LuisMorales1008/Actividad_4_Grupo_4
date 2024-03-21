@@ -4,134 +4,189 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const Inicio = () => {
-  const [posts, setPosts] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterOption, setFilterOption] = useState('');
-  const [filterValue, setFilterValue] = useState('');
-  const [professors, setProfesores] = useState([]);
-  const [courses, setCurso] = useState([]);
+  const [publicaciones, setPublicaciones] = useState([]);
+  const [cursos, setCursos] = useState([]);
+  const [catedraticos, setCatedraticos] = useState([]);
+  const [filtroSeleccionado, setFiltroSeleccionado] = useState('');
+  const [filtroValor, setFiltroValor] = useState('');
+  const [nuevoComentario, setNuevoComentario] = useState('');
+  const [datosUsuario, setDatosUsuario] = useState({
+    carnet: '',
+  });
 
   useEffect(() => {
-    fetchPosts();
-    fetchProfesores();
-    fetchCursos();
+    axios.get('http://localhost:5000/datosUsuario')
+      .then(response => {
+        if (response.data && response.data.datosUsuario) {
+          const { correo, carnet, nombre, apellido } = response.data.datosUsuario;
+          setDatosUsuario({ correo, carnet, nombre, apellido });
+        } else {
+          console.error('No se pudieron obtener los datos del usuario');
+        }
+      })
+      .catch(error => {
+        console.error('Error al obtener datos del usuario:', error);
+      });
   }, []);
 
-  const fetchPosts = async () => {
-    try {
-      const response = await axios.get('/api/posts');
-      setPosts(response.data);
-    } catch (error) {
-      console.error(error);
+  useEffect(() => {
+    axios.get('http://localhost:5000/publicaciones')
+      .then(res => {
+        setPublicaciones(res.data.publicaciones);
+        setCursos(res.data.cursos);
+        setCatedraticos(res.data.catedraticos);
+      })
+      .catch(err => console.error(err));
+  }, []);
+
+  const handleFiltroChange = (e) => {
+    setFiltroSeleccionado(e.target.value);
+    setFiltroValor('');
+  };
+
+  const handleFiltroValorChange = (e) => {
+    setFiltroValor(e.target.value);
+  };
+
+  const handleComentarioChange = (e, publicacionId) => {
+    setNuevoComentario(e.target.value);
+    // Aquí puedes agregar la lógica para enviar el comentario a la API
+  };
+
+  const handleComentarioEnviar = (publicacionId) => {
+    // Lógica para enviar el comentario a la API
+    axios.post('http://localhost:5000/comentarios', {
+      publicacionId,
+      texto: nuevoComentario,
+      usuario: datosUsuario.carnet
+    })
+      .then(res => {
+        // Actualizar la lista de comentarios de la publicación
+        setPublicaciones(prevPublicaciones => {
+          return prevPublicaciones.map(publicacion => {
+            if (publicacion.id === publicacionId) {
+              return {
+                ...publicacion,
+                comentarios: [...publicacion.comentarios, res.data.nuevoComentario]
+              };
+            }
+            return publicacion;
+          });
+        });
+        setNuevoComentario(''); // Limpiar el input de comentarios
+      })
+      .catch(err => console.error(err));
+  };
+
+  const publicacionesFiltradas = publicaciones.filter(publicacion => {
+    if (filtroSeleccionado === 'curso') {
+      return publicacion.curso === filtroValor;
+    } else if (filtroSeleccionado === 'catedratico') {
+      return publicacion.catedratico === filtroValor;
+    } else if (filtroSeleccionado === 'nombreCurso') {
+      return publicacion.curso.toLowerCase().includes(filtroValor.toLowerCase());
+    } else if (filtroSeleccionado === 'nombreCatedratico') {
+      return publicacion.catedratico.toLowerCase().includes(filtroValor.toLowerCase());
+    } else {
+      return true;
     }
-  };
-
-  const fetchProfesores = async () => {
-    try {
-      const response = await axios.get('/api/professors');
-      setProfesores(response.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const fetchCursos = async () => {
-    try {
-      const response = await axios.get('/api/courses');
-      setCurso(response.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleSearch = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleFilterOptionChange = (e) => {
-    setFilterOption(e.target.value);
-    setFilterValue('');
-  };
-
-  const handleFilterValueChange = (e) => {
-    setFilterValue(e.target.value);
-  };
-
-  const filteredPosts = posts.filter((post) => {
-    const { title, content } = post;
-    const searchRegex = new RegExp(searchQuery, 'i');
-
-    if (filterOption === 'curso') {
-      return title.includes(filterValue) || searchRegex.test(title);
-    } else if (filterOption === 'profesor') {
-      return content.includes(filterValue) || searchRegex.test(content);
-    } else if (filterOption === 'cursoText') {
-      const course = courses.find((c) => c.name.toLowerCase() === filterValue.toLowerCase());
-      return course ? title.includes(course.name) || searchRegex.test(title) : false;
-    } else if (filterOption === 'profesorText') {
-      const professor = professors.find((p) => p.name.toLowerCase() === filterValue.toLowerCase());
-      return professor ? content.includes(professor.name) || searchRegex.test(content) : false;
-    }
-
-    return searchRegex.test(title) || searchRegex.test(content);
   });
 
   return (
-    <div>
-      <center><h1>Pantalla Inicial</h1>
-      <div className={styles.form}>
-        <select value={filterOption} onChange={handleFilterOptionChange}>
-          <option value="">Seleccionar opción de filtro</option>
+    <div><center>
+      <h1>Pantalla Inicial</h1>
+
+      {/* Filtros */}
+      <div>
+        <select value={filtroSeleccionado} onChange={handleFiltroChange}>
+          <option value="">Seleccionar filtro</option>
           <option value="curso">Filtrar por Curso</option>
-          <option value="profesor">Filtrar por Catedrático</option>
-          <option value="cursoText">Filtrar por Nombre de Curso</option>
-          <option value="profesorText">Filtrar por Nombre de Catedrático</option>
-        </select><p/>
-        {filterOption === 'curso' && (
-          <select value={filterValue} onChange={handleFilterValueChange}>
+          <option value="catedratico">Filtrar por Catedrático</option>
+          <option value="nombreCurso">Filtrar por Nombre de Curso</option>
+          <option value="nombreCatedratico">Filtrar por Nombre de Catedrático</option>
+        </select>
+
+        {filtroSeleccionado === 'curso' && (
+          <select value={filtroValor} onChange={handleFiltroValorChange}>
             <option value="">Seleccionar curso</option>
-            {courses.map((course) => (
-              <option key={course.id} value={course.name}>
-                {course.name}
-              </option>
+            {cursos.map(curso => (
+              <option key={curso} value={curso}>{curso}</option>
             ))}
           </select>
         )}
-        {filterOption === 'profesor' && (
-          <select value={filterValue} onChange={handleFilterValueChange}>
+
+        {filtroSeleccionado === 'catedratico' && (
+          <select value={filtroValor} onChange={handleFiltroValorChange}>
             <option value="">Seleccionar catedrático</option>
-            {professors.map((professor) => (
-              <option key={professor.id} value={professor.name}>
-                {professor.name}
-              </option>
+            {catedraticos.map(catedratico => (
+              <option key={catedratico} value={catedratico}>{catedratico}</option>
             ))}
           </select>
         )}
-        {filterOption === 'cursoText' && (
+
+        {(filtroSeleccionado === 'nombreCurso' || filtroSeleccionado === 'nombreCatedratico') && (
           <input
             type="text"
-            placeholder="Ingrese el nombre del curso"
-            value={filterValue}
-            onChange={handleFilterValueChange}
-          />
-        )}
-        {filterOption === 'profesorText' && (
-          <input
-            type="text"
-            placeholder="Ingrese el nombre del catedrático"
-            value={filterValue}
-            onChange={handleFilterValueChange}
+            placeholder={`Filtrar por ${filtroSeleccionado === 'nombreCurso' ? 'Nombre de Curso' : 'Nombre de Catedrático'}`}
+            value={filtroValor}
+            onChange={handleFiltroValorChange}
           />
         )}
       </div>
-      <ul>
-        {filteredPosts.map((post) => (
-          <li key={post.id}>
-            <h2>{post.title}</h2>
-            <p>{post.content}</p>
-          </li>
-        ))}
-      </ul>
+
+      {/* Publicación de bienvenida */}
+      <div>
+        <h3>Bienvenido a la Aplicación</h3>
+        <p>Publicacion de Prueba</p>
+        <p>Publicado por: Sistema</p>
+        <p>Fecha: {new Date().toLocaleDateString()}</p>
+
+        <div>
+          <h4>Comentarios:</h4>
+          {/* Renderizar comentarios previos */}
+          {publicaciones.find(p => p.id === 'bienvenida')?.comentarios.map(comentario => (
+            <div key={comentario.id}>
+              <p>{comentario.texto}</p>
+              <p>Por: {comentario.usuario}</p>
+            </div>
+          ))}
+          <input
+            type="text"
+            placeholder="Agregar comentario"
+            value={nuevoComentario}
+            onChange={(e) => handleComentarioChange(e, 'bienvenida')}
+          /><br/>
+          <button onClick={() => handleComentarioEnviar('bienvenida')}>Enviar</button>
+        </div>
+      </div>
+
+      {/* Publicaciones */}
+      {publicacionesFiltradas.map(publicacion => (
+        <div key={publicacion.id}>
+          <h3>{publicacion.curso} - {publicacion.catedratico}</h3>
+          <p>{publicacion.mensaje}</p>
+          <p>Publicado por: {publicacion.usuario}</p>
+          <p>Fecha: {publicacion.fecha}</p>
+
+          <div>
+            <h4>Comentarios:</h4>
+            {/* Renderizar comentarios previos */}
+            {publicacion.comentarios.map(comentario => (
+              <div key={comentario.id}>
+                <p>{comentario.texto}</p>
+                <p>Por: {comentario.usuario}</p>
+              </div>
+            ))}
+            <input
+              type="text"
+              placeholder="Agregar comentario"
+              value={nuevoComentario}
+              onChange={(e) => handleComentarioChange(e, publicacion.id)}
+            /><br/>
+            <button onClick={() => handleComentarioEnviar(publicacion.id)}>Enviar</button>
+          </div>
+        </div>
+      ))}
       </center>
     </div>
   );
