@@ -53,13 +53,13 @@ const Perfil = () => {
   };
 
   const validarDatos = async () => {
-    if (!carnet || !contrasena) {
+    if (!datosUsuario.carnet || !contrasena) {
       alert('Por favor, completa todos los campos.');
       return;
     }
   
     try {
-      const response = await axios.post('http://localhost:5000/validarDatosPerfil', { carnet, contrasena });
+      const response = await axios.post('http://localhost:5000/validarDatosPerfil', { carnet: datosUsuario.carnet, contrasena });
       if (response.data.valido) {
         setValidacionCorrecta(true);
       } else {
@@ -139,39 +139,44 @@ const Perfil = () => {
             <> 
               <label className={styles.label}><h1>Modificar Mis Datos</h1></label>
               <br/>
-              <label>Ingrese su Nombre</label>
+              <label className={styles.label}>Ingrese su Nombre:</label>
               <input
                 type="text"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
+                placeholder='Nombre'
                 className={styles.input}
               /><br/>
-              <label>Ingrese Su Apellido:</label>
+              <label className={styles.label}>Ingrese Su Apellido:</label>
               <input
                 type="text"
                 value={apellido}
                 onChange={(e) => setApellido(e.target.value)}
+                placeholder='Apellido'
                 className={styles.input}
               /><br/>
-              <label>Ingrese Su Correo Electrónico:</label>
+              <label className={styles.label}>Ingrese Su Correo Electrónico:</label>
               <input
                 type="text"
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
+                placeholder='Correo Electrónico'
                 className={styles.input}
               /><br/>
-              <label>Nueva Contraseña:</label>
+              <label className={styles.label}>Ingrese la Nueva Contraseña:</label>
               <input
                 type="password"
                 value={nuevaContrasena}
                 onChange={(e) => setNuevaContrasena(e.target.value)}
+                placeholder='Nueva Contraseña'
                 className={styles.input}
               /><br/>
-              <label>Confirmar Contraseña:</label>
+              <label className={styles.label}>Confirmar Contraseña:</label>
               <input
                 type="password"
                 value={confirmarContrasena}
                 onChange={(e) => setConfirmarContrasena(e.target.value)}
+                placeholder='Confirmar Contraseña'
                 className={styles.input}
               /><br/>
 

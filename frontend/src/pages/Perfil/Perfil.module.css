@@ -92,11 +92,11 @@
 .cancelButton,
 .boton,
 .verifyButton {
-  background: #d9a7c7; /* fallback for old browsers */
-  background: -webkit-linear-gradient(to left, #d9a7c7, #fffcdc); /* Chrome 10-25, Safari 5.1-6 */
-  background: linear-gradient(to left, #d9a7c7, #fffcdc); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-  border: 1px solid black;
-  color: black;
+  background: #232526;  /* fallback for old browsers */
+  background: -webkit-linear-gradient(to right, #414345, #232526);  /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to right, #414345, #232526); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  border: 1px solid white;
+  color: white;
   padding: 5px 10px;
   cursor: pointer;
   border-radius: 5px;
@@ -138,17 +138,18 @@
 .search-title {
   text-align: center;
   margin-bottom: 20px;
-  font-size: 24px; 
+  font-size: 30px; 
   color: #333; 
   font-weight: bold; 
   text-transform: uppercase; 
   letter-spacing: 2px; 
   animation: fadeInUp 1s ease; 
   transition: font-size 0.3s ease; 
+  font-family: 'Comic Sans MS', cursive;
 }
 
 .search-title:hover {
-  font-size: 25px;
+  font-size: 33px;
 }
 
 @keyframes fadeInUp {
@@ -163,10 +164,11 @@
 }
 
 .datosPerfil {
+  font-size: 18px;
   max-width: 500px; /* Ancho máximo del cuadro */
   border: 2px solid #ccc;
-  border-radius: 5px;
-  padding: 15px; /* Reducir un poco el espacio interno */
+  border-radius: 15px;
+  padding: 15px; 
   background-color: #f9f9f9;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }

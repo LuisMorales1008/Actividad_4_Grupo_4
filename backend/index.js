@@ -80,7 +80,7 @@ app.post('/crearEstudiante', (req, res) => {
     });
 });
 
-// Declaración de un objeto global para almacenar los datos del usuario
+// objeto global para almacenar los datos del usuario
 let datosUsuario = {};
 
 // Función para iniciar sesión utilizando la base de datos
@@ -283,7 +283,6 @@ app.post('/nuevosDatos', (req, res) => {
             // Actualizar el objeto global datosUsuario con los nuevos datos
             datosUsuario = { carnet, nombre, apellido, correo, contrasena };
 
-            // Datos actualizados exitosamente
             res.status(200).json({ mensaje: 'Datos actualizados exitosamente' });
         });
     });
@@ -374,6 +373,73 @@ app.get('/mostrar-cursos-aprobados/:carnet', (req, res) => {
             res.status(500).json({ message: 'Ocurrió un error al obtener los cursos aprobados.' });
         } else {
             res.status(200).json({ cursosAprobados });
+        }
+    });
+});
+
+// Ruta para crear una publicacion
+app.post('/crearPublicacion', (req, res) => {
+    const { carnet, tipoPublicacion, mensaje, titulo } = req.body;
+
+    // Insertar la nueva publicación en la base de datos
+    const query = 'INSERT INTO Publicaciones (carnet, TipoPublicacion, Mensaje, Titulo) VALUES (?, ?, ?, ?)';
+    connection.query(query, [carnet, tipoPublicacion, mensaje, titulo], (error, result) => {
+        if (error) {
+            console.error('Error al crear la publicación:', error);
+            res.status(500).json({ message: 'Error al crear la publicación.' });
+        } else {
+            res.status(201).json({ message: 'Publicación creada exitosamente.', publicacionID: result.insertId });
+        }
+    });
+});
+
+// Ruta para obtener todas las publicaciones
+app.get('/publicaciones', (req, res) => {
+    // Realizar la consulta a la base de datos para obtener todas las publicaciones
+    const query = 'SELECT * FROM Publicaciones';
+    connection.query(query, (error, publicaciones) => {
+        if (error) {
+            console.error('Error al obtener las publicaciones:', error);
+            res.status(500).json({ message: 'Ocurrió un error al obtener las publicaciones.' });
+        } else {
+            res.status(200).json({ publicaciones });
+        }
+    });
+});
+
+//Ruta para crear un comentario
+app.post('/comentarios', (req, res) => {
+    const { PublicacionID, CarnetUsuario, Mensaje } = req.body;
+
+    // Validar los datos recibidos
+    if (!PublicacionID || !CarnetUsuario || !Mensaje) {
+        return res.status(400).json({ message: 'Por favor, proporcione todos los datos requeridos.' });
+    }
+
+    // Insertar el comentario en la base de datos
+    const query = 'INSERT INTO comentarios (PublicacionID, CarnetUsuario, Mensaje) VALUES (?, ?, ?)';
+    connection.query(query, [PublicacionID, CarnetUsuario, Mensaje], (error, results) => {
+        if (error) {
+            console.error('Error al crear el comentario:', error);
+            return res.status(500).json({ message: 'Ocurrió un error al crear el comentario.' });
+        } else {
+            res.status(201).json({ message: 'Comentario creado exitosamente.', comentarioID: results.insertId });
+        }
+    });
+});
+
+//Ruta para obenter los comentarios de una publicacion
+app.get('/comentarios/:publicacionID', (req, res) => {
+    const { publicacionID } = req.params;
+
+    // Realizar la consulta a la base de datos para obtener los comentarios de la publicación
+    const query = 'SELECT * FROM comentarios WHERE PublicacionID = ?';
+    connection.query(query, [publicacionID], (error, comentarios) => {
+        if (error) {
+            console.error('Error al obtener los comentarios:', error);
+            res.status(500).json({ message: 'Ocurrió un error al obtener los comentarios.' });
+        } else {
+            res.status(200).json({ comentarios });
         }
     });
 });

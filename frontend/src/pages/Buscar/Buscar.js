@@ -42,40 +42,47 @@ const Buscar = () => {
     setMostrarCursos(!mostrarCursos);
   };
 
+  const calcularTotalCreditos = (cursos) => {
+    return cursos.reduce((total, curso) => total + curso.creditos, 0);
+};
+
   return (
-    <div className={`${styles['search-container']} ${styles['search-container-custom']}`}>
-      <h1 className={`${styles['search-title']} ${styles['search-title-custom']}`}>Buscar Registro Académico</h1>
-      <div className={`${styles['search-bar']} ${styles['search-bar-custom']}`}>
-        <input 
-          type="text" 
-          placeholder="Ingrese el carnet"
-          value={carnetBuscado}
-          onChange={(e) => setCarnetBuscado(e.target.value)}
-          className={`${styles['search-input']} ${styles['search-input-custom']}`} 
-        />
-        <button onClick={buscarUsuario} className={`${styles['search-button']} ${styles['search-button-custom']}`}> 
-          <FaSearch className={`${styles['search-icon']} ${styles['search-icon-custom']}`} />
-        </button>
-      </div>
-      {error && <p className={`${styles['error-message']} ${styles['error-message-custom']}`}>{error}</p>}
-      {usuarioEncontrado && (
-        <div className={`${styles['user-profile']} ${styles['user-profile-custom']}`}>
-          <h2>Perfil del Usuario</h2>
+  <div className={`${styles['search-container']} ${styles['search-container-custom']}`}>
+    <h1 className={`${styles['search-title']} ${styles['search-title-custom']}`}>Buscar Registro Académico</h1>
+    <div className={`${styles['search-bar']} ${styles['search-bar-custom']}`}>
+      <input 
+        type="text" 
+        placeholder="Ingrese Registro Académico"
+        value={carnetBuscado}
+        onChange={(e) => setCarnetBuscado(e.target.value)}
+        className={`${styles['search-input']} ${styles['search-input-custom']}`} 
+      />
+      <button onClick={buscarUsuario} className={`${styles['search-button']} ${styles['search-button-custom']}`}> 
+        <FaSearch className={`${styles['search-icon']} ${styles['search-icon-custom']}`} />
+      </button>
+    </div>
+    {error && <p className={`${styles['error-message']} ${styles['error-message-custom']}`}>{error}</p>}
+    {usuarioEncontrado && (
+      <div className={styles.userDetailsContainer}>
+        <label className={styles.label}><h1>Datos del Usuario Encontrado</h1></label>
+        <div className={styles.datosPerfil}>
           <p><strong>Carnet:</strong> {usuarioEncontrado.carnet}</p>
           <p><strong>Nombre:</strong> {usuarioEncontrado.nombre}</p>
           <p><strong>Apellido:</strong> {usuarioEncontrado.apellido}</p>
           <p><strong>Correo:</strong> {usuarioEncontrado.correo}</p>
         </div>
-      )}
-      {usuarioEncontrado && (
-        <button onClick={handleMostrarCursos} className={`${styles['toggle-button']} ${styles['toggle-button-custom']}`}>
-          {mostrarCursos ? 'Ocultar cursos aprobados' : 'Mostrar cursos aprobados'}
-        </button>
-      )}
-      {mostrarCursos && cursosAprobados.length === 0 && (
-        <p className={`${styles['no-courses']} ${styles['no-courses-custom']}`}>Este Usuario No Tiene Cursos Aprobados.</p>
-      )}
-      {mostrarCursos && cursosAprobados.length > 0 && (
+      </div>
+    )}
+    {usuarioEncontrado && (
+      <button onClick={handleMostrarCursos} className={`${styles['toggle-button']} ${styles['toggle-button-custom']}`}>
+        {mostrarCursos ? 'Ocultar cursos aprobados' : 'Mostrar cursos aprobados'}
+      </button>
+    )}
+    {mostrarCursos && cursosAprobados.length === 0 && (
+      <p className={`${styles['no-courses']} ${styles['no-courses-custom']}`}>Este Usuario No Tiene Cursos Aprobados.</p>
+    )}
+    {mostrarCursos && cursosAprobados.length > 0 && (
+      <>
         <table className={`${styles.table} ${styles['courses-table']}`}>
           <thead>
             <tr>
@@ -94,8 +101,10 @@ const Buscar = () => {
             ))}
           </tbody>
         </table>
-      )}
-    </div>
+        <p className={styles.totalCredits}>Total de Créditos de Cursos Aprobados: {calcularTotalCreditos(cursosAprobados)}</p>
+      </>
+    )}
+  </div>
 );
 };
 

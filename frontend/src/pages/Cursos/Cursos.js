@@ -88,6 +88,9 @@ const handleAgregarCurso = async (cursoId) => {
         console.error('Error al agregar el curso asignado:', error);
     }
 };
+const calcularTotalCreditos = (cursos) => {
+    return cursos.reduce((total, curso) => total + curso.creditos, 0);
+};
 
 return (
     <div className={styles['search-container']}>
@@ -107,11 +110,12 @@ return (
             </button>
         </div>
         <div className={styles.tabContent}>
-            {selectedTab === 'aprobados' && (
-                <>
-                    {cursosAprobados.length === 0 ? (
-                        <p>No tienes Cursos Aprobados.</p>
-                    ) : (
+        {selectedTab === 'aprobados' && (
+            <>
+                {cursosAprobados.length === 0 ? (
+                    <p>No tienes Cursos Aprobados.</p>
+                ) : (
+                    <>
                         <table className={styles.table}>
                             <thead>
                                 <tr>
@@ -130,8 +134,10 @@ return (
                                 ))}
                             </tbody>
                         </table>
-                    )}
-                </>
+                        <p className={styles.totalCredits}>Total de Créditos de Cursos Aprobados: {calcularTotalCreditos(cursosAprobados)}</p>
+                    </>
+                )}
+            </>
             )}
             {selectedTab === 'asignados' && (
                 <table className={styles.table}>
