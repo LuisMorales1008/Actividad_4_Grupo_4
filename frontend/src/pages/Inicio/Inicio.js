@@ -6,16 +6,15 @@ import axios from 'axios';
 const Inicio = () => {
   const [posts, setPosts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterOptions, setFilterOptions] = useState({
-    filterType: 'course',
-    course: '',
-    professor: '',
-    courseQuery: '',
-    professorQuery: '',
-  });
+  const [filterOption, setFilterOption] = useState('');
+  const [filterValue, setFilterValue] = useState('');
+  const [professors, setProfesores] = useState([]);
+  const [courses, setCurso] = useState([]);
 
   useEffect(() => {
     fetchPosts();
+    fetchProfesores();
+    fetchCursos();
   }, []);
 
   const fetchPosts = async () => {
@@ -27,86 +26,104 @@ const Inicio = () => {
     }
   };
 
+  const fetchProfesores = async () => {
+    try {
+      const response = await axios.get('/api/professors');
+      setProfesores(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const fetchCursos = async () => {
+    try {
+      const response = await axios.get('/api/courses');
+      setCurso(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
   };
 
-  const handleFilterChange = (e) => {
-    setFilterOptions({
-      ...filterOptions,
-      [e.target.name]: e.target.value,
-    });
+  const handleFilterOptionChange = (e) => {
+    setFilterOption(e.target.value);
+    setFilterValue('');
+  };
+
+  const handleFilterValueChange = (e) => {
+    setFilterValue(e.target.value);
   };
 
   const filteredPosts = posts.filter((post) => {
-    const { filterType, course, professor, courseQuery, professorQuery } = filterOptions;
     const { title, content } = post;
     const searchRegex = new RegExp(searchQuery, 'i');
 
-    if (filterType === 'course') {
-      if (course && !title.includes(course)) return false;
-      if (courseQuery && !title.includes(courseQuery)) return false;
-    } else {
-      if (professor && !content.includes(professor)) return false;
-      if (professorQuery && !content.includes(professorQuery)) return false;
+    if (filterOption === 'curso') {
+      return title.includes(filterValue) || searchRegex.test(title);
+    } else if (filterOption === 'profesor') {
+      return content.includes(filterValue) || searchRegex.test(content);
+    } else if (filterOption === 'cursoText') {
+      const course = courses.find((c) => c.name.toLowerCase() === filterValue.toLowerCase());
+      return course ? title.includes(course.name) || searchRegex.test(title) : false;
+    } else if (filterOption === 'profesorText') {
+      const professor = professors.find((p) => p.name.toLowerCase() === filterValue.toLowerCase());
+      return professor ? content.includes(professor.name) || searchRegex.test(content) : false;
     }
+
     return searchRegex.test(title) || searchRegex.test(content);
   });
 
   return (
     <div>
-      <h1>Pantalla Inicial</h1>
-        <div>
-          <label>
-            <input
-              type="radio"
-              name="filterType"
-              value="course"
-              checked={filterOptions.filterType === 'course'}
-              onChange={handleFilterChange}
-            />
-            Curso
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="filterType"
-              value="professor"
-              checked={filterOptions.filterType === 'professor'}
-              onChange={handleFilterChange}
-            />
-            Profesor
-          </label>
-        </div>
-        {filterOptions.filterType === 'course' ? (
-          <>
-            <select name="course" value={filterOptions.course} onChange={handleFilterChange}>
-              <option value="">Filtrar por Curso</option>
-              {/* Aquí irían las opciones de cursos */}
-            </select>
-            <input
-              type="text"
-              placeholder="Filtrar por Nombre de Curso"
-              name="courseQuery"
-              value={filterOptions.courseQuery}
-              onChange={handleFilterChange}
-            />
-          </>
-        ) : (
-          <>
-            <select name="professor" value={filterOptions.professor} onChange={handleFilterChange}>
-              <option value="">Filtrar por Profesor</option>
-              {/* Aquí irían las opciones de profesores */}
-            </select>
-            <input
-              type="text"
-              placeholder="Filtrar por Nombre de Profesor"
-              name="professorQuery"
-              value={filterOptions.professorQuery}
-              onChange={handleFilterChange}
-            />
-          </>
+      <center><h1>Pantalla Inicial</h1>
+      <div className={styles.form}>
+        <select value={filterOption} onChange={handleFilterOptionChange}>
+          <option value="">Seleccionar opción de filtro</option>
+          <option value="curso">Filtrar por Curso</option>
+          <option value="profesor">Filtrar por Catedrático</option>
+          <option value="cursoText">Filtrar por Nombre de Curso</option>
+          <option value="profesorText">Filtrar por Nombre de Catedrático</option>
+        </select><p/>
+        {filterOption === 'curso' && (
+          <select value={filterValue} onChange={handleFilterValueChange}>
+            <option value="">Seleccionar curso</option>
+            {courses.map((course) => (
+              <option key={course.id} value={course.name}>
+                {course.name}
+              </option>
+            ))}
+          </select>
         )}
+        {filterOption === 'profesor' && (
+          <select value={filterValue} onChange={handleFilterValueChange}>
+            <option value="">Seleccionar catedrático</option>
+            {professors.map((professor) => (
+              <option key={professor.id} value={professor.name}>
+                {professor.name}
+              </option>
+            ))}
+          </select>
+        )}
+        {filterOption === 'cursoText' && (
+          <input
+            type="text"
+            placeholder="Ingrese el nombre del curso"
+            value={filterValue}
+            onChange={handleFilterValueChange}
+          />
+        )}
+        {filterOption === 'profesorText' && (
+          <input
+            type="text"
+            placeholder="Ingrese el nombre del catedrático"
+            value={filterValue}
+            onChange={handleFilterValueChange}
+          />
+        )}
+      </div>
       <ul>
         {filteredPosts.map((post) => (
           <li key={post.id}>
@@ -115,6 +132,7 @@ const Inicio = () => {
           </li>
         ))}
       </ul>
+      </center>
     </div>
   );
 };
